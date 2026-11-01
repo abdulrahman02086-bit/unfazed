@@ -96,7 +96,7 @@ export function TopBar({ active }: { active: string }) {
                   signOut();
                   window.location.hash = "";
                 }}
-                className="hidden rounded-full px-2.5 py-2 text-[12px] font-medium text-ink-3 transition-colors hover:text-ink lg:block"
+                className="rounded-full px-2.5 py-2 text-[12px] font-semibold text-ink-3 transition-colors hover:bg-white hover:text-ink"
               >
                 Sign out
               </button>

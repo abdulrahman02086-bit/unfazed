@@ -5,6 +5,9 @@ import { Icon, cx } from "../components/ui";
 import {
   DEMO_ACCOUNTS,
   ROLE_LABEL,
+  authenticate,
+  createAccount,
+  listAccounts,
   rememberedEmail,
   rememberEmail,
   signIn,
@@ -32,6 +35,9 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(() => Boolean(rememberedEmail()));
+  const [mode, setMode] = useState<"signin" | "create">("signin");
+  const [fullName, setFullName] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -57,7 +63,7 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
     }, 260);
   };
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     const clean = email.trim().toLowerCase();
@@ -71,18 +77,54 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
       return;
     }
 
-    const account = DEMO_ACCOUNTS[role];
-    if (clean !== account.email || password !== account.password) {
-      const other = role === "PRACTITIONER" ? DEMO_ACCOUNTS.CLIENT : DEMO_ACCOUNTS.PRACTITIONER;
-      setError(
-        clean === other.email
-          ? `That email belongs to a ${ROLE_LABEL[other.role].toLowerCase()} account — switch the tab above.`
-          : "Those details don't match this practice. Use the demo account shown below.",
-      );
+    setBusy(true);
+    const result = await authenticate(clean, password, role);
+    if (!result.ok) {
+      setBusy(false);
+      setError(result.error);
       return;
     }
 
-    complete(role, account.name, clean);
+    complete(result.account.role, result.account.name, result.account.email);
+  };
+
+  const submitCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    const cleanName = fullName.trim().replace(/\s+/g, " ");
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (cleanName.length < 2) {
+      setError("Enter the name we should greet you by.");
+      return;
+    }
+    if (!EMAIL_RE.test(cleanEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Passwords are at least 6 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Those passwords don't match.");
+      return;
+    }
+
+    setBusy(true);
+    const result = await createAccount({
+      role,
+      name: cleanName,
+      email: cleanEmail,
+      password,
+    });
+    if (!result.ok) {
+      setBusy(false);
+      setError(result.error);
+      return;
+    }
+
+    complete(result.account.role, result.account.name, result.account.email);
   };
 
   const useDemo = () => {
@@ -198,7 +240,10 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
                 </a>
                 <button
                   type="button"
-                  onClick={() => signOut()}
+                  onClick={() => {
+                    signOut();
+                    notify("Signed out of this device.");
+                  }}
                   className="rounded-full border border-line px-3 py-1.5 text-[11px] font-semibold text-ink-2"
                 >
                   Sign out
@@ -206,17 +251,56 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
               </div>
             )}
 
-            <h1 className="display-serif mt-6 text-[clamp(2rem,3.4vw,2.6rem)] text-ink">Welcome back.</h1>
+            <h1 className="display-serif mt-6 text-[clamp(2rem,3.4vw,2.6rem)] text-ink">
+              {mode === "signin" ? "Welcome back." : "Create your account."}
+            </h1>
             <p className="mt-2 text-[12.5px] leading-relaxed text-[#5f6d66]">
-              Sign in to your practice. Sessions are held on this device for the demo — no password
-              ever leaves the browser.
+              {mode === "signin"
+                ? "Sign in to your practice. Sessions are held on this device for the demo — no password ever leaves the browser."
+                : "Anyone can open an account here. Pick how you'll use Unfazed and you're in — nothing leaves this device."}
             </p>
 
+            {/* Sign in / create account */}
+            <div
+              role="tablist"
+              aria-label="Sign in or create an account"
+              className="mt-6 inline-flex rounded-full border border-line bg-white p-1"
+            >
+              {(
+                [
+                  { id: "signin", label: "Sign in" },
+                  { id: "create", label: "Create account" },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === option.id}
+                  onClick={() => {
+                    setMode(option.id);
+                    setError(null);
+                  }}
+                  className={cx(
+                    "h-9 rounded-full px-4 text-[12px] font-semibold transition-colors",
+                    mode === option.id
+                      ? "bg-[#0f3d2e] text-white"
+                      : "text-ink-3 hover:text-ink",
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
             {/* Role switch */}
+            <p className="mt-5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-3">
+              {mode === "signin" ? "Signing in as" : "I'll use Unfazed as"}
+            </p>
             <div
               role="tablist"
               aria-label="Account type"
-              className="mt-6 grid grid-cols-2 gap-1 rounded-full border border-line bg-[#f4f2ec] p-1"
+              className="mt-2 grid grid-cols-2 gap-1 rounded-full border border-line bg-[#f4f2ec] p-1"
             >
               {(["PRACTITIONER", "CLIENT"] as SessionRole[]).map((r) => (
                 <button
@@ -238,7 +322,30 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
               ))}
             </div>
 
-            <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
+            <form
+              onSubmit={mode === "signin" ? submit : submitCreate}
+              className="mt-6 space-y-4"
+              noValidate
+            >
+              {mode === "create" && (
+                <div className="block">
+                  <label
+                    htmlFor="signup-name"
+                    className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-3"
+                  >
+                    Full name
+                  </label>
+                  <input
+                    id="signup-name"
+                    type="text"
+                    autoComplete="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Rhea Menon"
+                    className="mt-1.5 h-12 w-full rounded-2xl border border-line bg-white px-4 text-[13px] text-ink placeholder:text-ink-3/70 focus:border-[#12a05e] focus:outline-none focus:ring-4 focus:ring-[#12a05e]/12"
+                  />
+                </div>
+              )}
               <div className="block">
                 <label
                   htmlFor="login-email"
@@ -265,23 +372,25 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
                   >
                     Password
                   </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      notify(
-                        "A reset link would be emailed by the practice. In this demo, use the credentials below.",
-                      )
-                    }
-                    className="text-[11px] font-medium text-[#157a4d] hover:underline"
-                  >
-                    Forgot?
-                  </button>
+                  {mode === "signin" && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        notify(
+                          "A reset link would be emailed by the practice. In this demo, use the credentials below.",
+                        )
+                      }
+                      className="text-[11px] font-medium text-[#157a4d] hover:underline"
+                    >
+                      Forgot?
+                    </button>
+                  )}
                 </span>
                 <span className="relative mt-1.5 block">
                   <input
                     id="login-password"
                     type={show ? "text" : "password"}
-                    autoComplete="current-password"
+                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -296,6 +405,26 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
                   </button>
                 </span>
               </div>
+
+              {mode === "create" && (
+                <div className="block">
+                  <label
+                    htmlFor="signup-confirm"
+                    className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-3"
+                  >
+                    Confirm password
+                  </label>
+                  <input
+                    id="signup-confirm"
+                    type={show ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    placeholder="••••••••"
+                    className="mt-1.5 h-12 w-full rounded-2xl border border-line bg-white px-4 text-[13px] text-ink placeholder:text-ink-3/70 focus:border-[#12a05e] focus:outline-none focus:ring-4 focus:ring-[#12a05e]/12"
+                  />
+                </div>
+              )}
 
               <label className="flex cursor-pointer items-center gap-2.5 text-[12px] text-ink-2">
                 <input
@@ -321,12 +450,20 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
                 disabled={busy}
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#12a05e] text-[13px] font-semibold text-white shadow-[0_18px_36px_-20px_rgba(18,160,94,1)] transition-colors hover:bg-[#0e8c52] disabled:opacity-70"
               >
-                {busy ? "Opening your practice…" : "Sign in"}
+                {busy
+                  ? mode === "signin"
+                    ? "Opening your practice…"
+                    : "Creating your account…"
+                  : mode === "signin"
+                    ? "Sign in"
+                    : "Create account"}
                 {!busy && <Icon name="arrow" className="h-4 w-4" strokeWidth={2} />}
               </button>
             </form>
 
-            <div className="my-6 flex items-center gap-3">
+            {mode === "signin" && (
+              <>
+                <div className="my-6 flex items-center gap-3">
               <span className="h-px flex-1 bg-line" />
               <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-3">or</span>
               <span className="h-px flex-1 bg-line" />
@@ -382,15 +519,73 @@ export function Login({ intent }: { intent?: "console" | "portal" }) {
               </div>
             </div>
 
-            <p className="mt-5 text-center text-[11.5px] text-ink-3">
-              New here?{" "}
-              <a href="#/public" className="font-semibold text-[#157a4d] hover:underline">
-                Book your first session
-              </a>{" "}
-              · {" "}
-              <a href="#/" className="font-semibold text-[#157a4d] hover:underline">
-                Read about the practice
-              </a>
+                {listAccounts().length > 0 && (
+                  <div className="mt-3 rounded-2xl border border-line bg-white p-3.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-3">
+                      Accounts on this device
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {listAccounts().map((account) => (
+                        <li key={account.id} className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRole(account.role);
+                              setEmail(account.email);
+                              setPassword("");
+                              setError(null);
+                            }}
+                            className="min-w-0 flex-1 truncate rounded-xl px-2 py-1.5 text-left text-[11.5px] font-semibold text-ink transition-colors hover:bg-[#f6f4ee]"
+                          >
+                            {account.email}
+                          </button>
+                          <span className="shrink-0 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-3">
+                            {ROLE_LABEL[account.role]}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}            <p className="mt-5 text-center text-[11.5px] text-ink-3">
+              {mode === "signin" ? (
+                <>
+                  New here?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("create");
+                      setError(null);
+                    }}
+                    className="font-semibold text-[#157a4d] hover:underline"
+                  >
+                    Create an account
+                  </button>{" "}
+                  ·{" "}
+                  <a href="#/public" className="font-semibold text-[#157a4d] hover:underline">
+                    Book your first session
+                  </a>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signin");
+                      setError(null);
+                    }}
+                    className="font-semibold text-[#157a4d] hover:underline"
+                  >
+                    Sign in
+                  </button>{" "}
+                  ·{" "}
+                  <a href="#/public" className="font-semibold text-[#157a4d] hover:underline">
+                    Book your first session
+                  </a>
+                </>
+              )}
             </p>
           </div>
         </div>

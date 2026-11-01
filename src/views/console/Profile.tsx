@@ -54,6 +54,20 @@ export function ProfileTab() {
           <Field label="Portrait URL" className="sm:col-span-2">
             <Input value={draft.photoUrl} onChange={(e) => set("photoUrl", e.target.value)} />
           </Field>
+          <Field label="WhatsApp number" hint="Opens wa.me links on the booking page.">
+            <Input
+              value={draft.whatsapp}
+              placeholder="+91 "
+              onChange={(e) => set("whatsapp", e.target.value)}
+            />
+          </Field>
+          <Field label="Support email" hint="Opens Gmail compose from the site.">
+            <Input
+              type="email"
+              value={draft.supportEmail}
+              onChange={(e) => set("supportEmail", e.target.value)}
+            />
+          </Field>
           <Field label="Bio" className="sm:col-span-2">
             <Textarea value={draft.bio} onChange={(e) => set("bio", e.target.value)} />
           </Field>

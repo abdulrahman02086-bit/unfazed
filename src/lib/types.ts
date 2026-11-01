@@ -33,6 +33,10 @@ export interface Therapist {
   title: string;
   bio: string;
   photoUrl: string;
+  /** Public WhatsApp number in local format; wa.me links strip the formatting. */
+  whatsapp: string;
+  /** Practice inbox used by the Gmail compose links. */
+  supportEmail: string;
   languages: string[];
   specialisations: string[];
   experienceYears: number;

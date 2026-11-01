@@ -25,7 +25,7 @@ function read(): AppState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return seedState();
     const parsed = JSON.parse(raw) as AppState;
-    if (!parsed || parsed.version !== 1 || !parsed.therapist) return seedState();
+    if (!parsed || parsed.version !== 4 || !parsed.therapist) return seedState();
     return parsed;
   } catch {
     return seedState();

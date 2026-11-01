@@ -1,5 +1,18 @@
 import { useMemo, useState } from "react";
-import { Badge, Button, Field, Input, Modal, Note, Panel, Select, cx } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Field,
+  Icon,
+  Input,
+  Modal,
+  Note,
+  Panel,
+  Select,
+  WhatsAppMark,
+  cx,
+} from "../components/ui";
+import { bookingEnquiry, gmailHref, supportSubject, whatsappHref } from "../lib/contact";
 import { canAccess } from "../lib/entitlements";
 import { dateLabel, inr, isoPlus, slotsFor, timeLabel, todayISO } from "../lib/format";
 import { recordInvoice } from "../lib/routing";
@@ -55,6 +68,22 @@ export function PublicBooking() {
   const amount = service?.price ?? 0;
   const selectedLabel = slot ? `${dateLabel(date, { weekday: true })} · ${timeLabel(slot)}` : "No time selected";
   const canConfirm = Boolean(slot && service) && (clientId !== "new" || newClient.name.trim().length > 1);
+
+  // Hand-off links. They carry whatever is on screen, so the practice can
+  // confirm in chat even before anything is paid for.
+  const enquiry = bookingEnquiry(t, {
+    name: clientId === "new" ? newClient.name.trim() || undefined : client?.name,
+    service: service?.name,
+    when: slot ? `${dateLabel(date, { weekday: true, year: true })} · ${timeLabel(slot)} IST` : undefined,
+    fee:
+      mode === "PACKAGE"
+        ? "One session from a prepaid package"
+        : service
+          ? inr(amount)
+          : undefined,
+  });
+  const whatsappEnquiryHref = whatsappHref(t.whatsapp, enquiry);
+  const gmailEnquiryHref = gmailHref(t.supportEmail, supportSubject(t), enquiry);
 
   const openPayment = () => {
     if (!slot) {
@@ -133,6 +162,15 @@ export function PublicBooking() {
 
   if (booked) {
     const svc = state.services.find((s) => s.id === booked.serviceId);
+    const confirmed = bookingEnquiry(t, {
+      service: svc?.name,
+      when: `${dateLabel(booked.date, { weekday: true, year: true })} · ${timeLabel(booked.time)} IST`,
+      fee:
+        booked.paymentMode === "PACKAGE"
+          ? "One session from a prepaid package"
+          : inr(booked.amount),
+      reference: booked.id.toUpperCase(),
+    });
     return (
       <div className="mx-auto max-w-[720px] px-4 py-14 sm:px-6">
         <p className="label text-pine">Confirmed</p>
@@ -155,15 +193,37 @@ export function PublicBooking() {
           ))}
         </dl>
         <p className="mt-6 text-[12.5px] leading-relaxed text-ink-2">
-          A confirmation has been recorded on the practice ledger. In a live deployment this is where
-          the calendar invite, the Razorpay receipt and the WhatsApp reminder would fire.
+          A confirmation has been recorded on the practice ledger. Send the same details to the
+          practice on WhatsApp or by email and the session is confirmed in writing.
         </p>
         <div className="mt-7 flex flex-wrap gap-2">
-          <Button variant="solid" onClick={() => setBooked(null)}>
-            Book another session
+          <a
+            href={whatsappHref(t.whatsapp, confirmed)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-[#128c4a] px-5 text-[13px] font-semibold text-white transition-colors hover:bg-[#0d7a3f]"
+          >
+            <WhatsAppMark className="h-4 w-4" />
+            Send details on WhatsApp
+          </a>
+          <a
+            href={gmailHref(t.supportEmail, supportSubject(t), confirmed)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-rule-strong bg-paper px-5 text-[13px] font-semibold text-ink transition-colors hover:bg-paper-2"
+          >
+            <Icon name="mail" className="h-4 w-4" />
+            Email the practice
+          </a>
+          <Button onClick={() => setBooked(null)}>Book another session</Button>
+          <Button variant="ghost" onClick={() => (window.location.hash = "#/portal")}>
+            Open client portal
           </Button>
-          <Button onClick={() => (window.location.hash = "#/portal")}>Open client portal</Button>
         </div>
+        <p className="mt-3 text-[11px] text-ink-3">
+          WhatsApp opens a chat with {t.whatsapp}; the email link opens Gmail with the message already
+          written.
+        </p>
       </div>
     );
   }
@@ -201,6 +261,26 @@ export function PublicBooking() {
               </li>
             ))}
           </ul>
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11.5px]">
+            <a
+              href={whatsappEnquiryHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#128c4a] hover:underline"
+            >
+              <WhatsAppMark className="h-3.5 w-3.5" />
+              {t.whatsapp}
+            </a>
+            <a
+              href={gmailEnquiryHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-ink-2 hover:text-ink hover:underline"
+            >
+              <Icon name="mail" className="h-3.5 w-3.5" />
+              {t.supportEmail}
+            </a>
+          </div>
         </div>
       </section>
 
@@ -439,6 +519,43 @@ export function PublicBooking() {
             <p className="mt-2 text-center text-[11px] text-ink-3">
               Slot is locked only after payment confirms. Razorpay runs in test mode.
             </p>
+
+            <div className="mt-4 grid gap-2 border-t border-rule pt-4 sm:grid-cols-2">
+              <a
+                href={whatsappEnquiryHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#e7f6ee] text-[12px] font-semibold text-[#128c4a] transition-colors hover:bg-[#d8f0e2]"
+              >
+                <WhatsAppMark className="h-4 w-4" />
+                Book on WhatsApp
+              </a>
+              <a
+                href={gmailEnquiryHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-rule-strong text-[12px] font-semibold text-ink transition-colors hover:bg-paper-2"
+              >
+                <Icon name="mail" className="h-4 w-4" />
+                Email via Gmail
+              </a>
+            </div>
+            <p className="mt-2 text-center text-[11px] text-ink-3">
+              Both open a pre-written message with the slot you picked. No sign-in needed.
+            </p>
+
+            <ul className="mt-4 space-y-1.5 border-t border-rule pt-3.5 text-[10.5px] leading-relaxed text-ink-3">
+              <li>Cancel or reschedule free up to 24 hours before the hour.</li>
+              <li>First session refundable if the fit isn't workable.</li>
+              <li>GST invoice issued for every payment.</li>
+              <li>
+                Not emergency care — for immediate risk call{" "}
+                <a href="tel:14416" className="font-semibold text-ink hover:underline">
+                  Tele-MANAS 14416
+                </a>
+                .
+              </li>
+            </ul>
           </div>
         </Panel>
       </div>

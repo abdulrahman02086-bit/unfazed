@@ -1,5 +1,17 @@
 import { HeadGlyph, SageBackdrop } from "../components/Brand";
-import { Icon, cx } from "../components/ui";
+import { Icon, WhatsAppMark, cx } from "../components/ui";
+import { bookingEnquiry, gmailHref, supportSubject, whatsappHref } from "../lib/contact";
+import {
+  CONCERNS,
+  CONFIDENTIALITY,
+  CREDENTIALS,
+  CRISIS_LINES,
+  INCLUSIONS,
+  POLICIES,
+  PROGRAMMES,
+  SIGNS,
+  STEPS,
+} from "../lib/content";
 import { activeClients } from "../lib/entitlements";
 import { dateLabel, inr, isoPlus, slotsFor, timeLabel, todayISO, upcoming } from "../lib/format";
 import { useStore } from "../lib/store";
@@ -49,6 +61,42 @@ const FAQ = [
     q: "What if I'm unsure whether therapy is right for me?",
     a: "A free 15-minute conversation is enough to find out. There is no obligation to continue, and the first session is refundable if it doesn't feel workable.",
   },
+  {
+    q: "What does a session cost, and is GST extra?",
+    a: "Individual therapy is ₹2,200 for 60 minutes, a focused check-in is ₹1,600 for 45 minutes, and a couples session is ₹3,400 for 90 minutes. Prices are per session and inclusive of GST, with an invoice issued for every payment. Prepaid packages cost less per hour.",
+  },
+  {
+    q: "How long does therapy usually take?",
+    a: "Most people notice a shift in six to eight sessions for a specific problem. Longer-standing patterns, grief and trauma work take more. Progress is reviewed every six sessions, so nobody drifts for a year without knowing why.",
+  },
+  {
+    q: "Are sessions online or in person?",
+    a: "Individual and check-in sessions run over video anywhere in India. Couples work can be in person in Mumbai or over video, and both formats write to the same clinical record.",
+  },
+  {
+    q: "What are the limits of confidentiality?",
+    a: "Everything is confidential except immediate risk to your life, risk to a child or another person, and a court order. Those limits are stated in the first session rather than discovered later.",
+  },
+  {
+    q: "Can you prescribe medication?",
+    a: "No — a clinical psychologist doesn't prescribe. When medication looks worth assessing, you'll be referred to a psychiatrist with your consent, and the two of you can work in parallel.",
+  },
+  {
+    q: "Do you see teenagers?",
+    a: "From 16 upwards, with the young person's own consent. Under 16 the practice works with a parent or guardian involved from the first session, and the young person still gets a private hour.",
+  },
+  {
+    q: "What if the fit isn't right?",
+    a: "Say so, and you'll be referred to a colleague whose specialism matches better. A referral is a normal clinical outcome, not an awkward exit.",
+  },
+  {
+    q: "How do I reschedule or cancel?",
+    a: "Up to 24 hours before the session, through the portal or on WhatsApp at no cost. Inside 24 hours the hour is charged, because the slot was held for you.",
+  },
+  {
+    q: "What happens in a crisis between sessions?",
+    a: "Message the practice for coordination, but for immediate risk use Tele-MANAS on 14416 or emergency services on 112. Between-session chat is not monitored around the clock.",
+  },
 ];
 
 const FORMATS = [
@@ -60,6 +108,8 @@ const FORMATS = [
 export function Landing() {
   const { state } = useStore();
   const t = state.therapist;
+  const whatsappChat = whatsappHref(t.whatsapp, bookingEnquiry(t));
+  const gmailSupport = gmailHref(t.supportEmail, supportSubject(t), bookingEnquiry(t));
   const today = todayISO();
   const todays = state.appointments.filter((a) => a.date === today && a.status !== "CANCELLED");
   const next = upcoming(state)[0];
@@ -138,6 +188,16 @@ export function Landing() {
                   </li>
                 ))}
               </ul>
+
+              <a
+                href={whatsappChat}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#12a05e]/25 bg-[#e7f2ea] px-4 py-2.5 text-[12px] font-semibold text-[#157a4d] transition-colors hover:bg-[#dbefe3]"
+              >
+                <WhatsAppMark className="h-3.5 w-3.5" />
+                Book over WhatsApp · {t.whatsapp}
+              </a>
             </div>
 
             {/* Collage with the line-art head, as in the reference */}
@@ -209,6 +269,45 @@ export function Landing() {
           </div>
         </section>
 
+        {/* ── How it works ────────────────────────────────────────────── */}
+        <section id="how-it-works" className="scroll-mt-24 pt-16 sm:pt-20">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#157a4d]">
+                How it works
+              </p>
+              <h2 className="display-serif mt-3 text-[clamp(1.9rem,3.6vw,2.7rem)] text-ink">
+                Three steps, no maze.
+              </h2>
+            </div>
+            <p className="max-w-[34ch] text-[12.5px] leading-relaxed text-[#5f6d66]">
+              The first conversation is free and the first session is refundable, so finding out
+              whether this is right for you costs fifteen minutes, not a commitment.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {STEPS.map((s) => (
+              <article
+                key={s.step}
+                className="relative flex h-full flex-col rounded-[24px] border border-white/70 bg-canvas p-5 shadow-[0_30px_70px_-60px_rgba(15,61,46,0.8)]"
+              >
+                <span className="num text-[10.5px] font-semibold tracking-[0.16em] text-[#a3b3aa]">
+                  {s.step}
+                </span>
+                <span className="mt-4 grid h-10 w-10 place-items-center rounded-xl bg-[#e7f2ea] text-[#157a4d]">
+                  <Icon name={s.icon} className="h-4 w-4" strokeWidth={1.8} />
+                </span>
+                <h3 className="mt-4 text-[15px] font-semibold text-ink">{s.title}</h3>
+                <p className="mt-2 flex-1 text-[12.5px] leading-[1.7] text-[#5f6d66]">{s.body}</p>
+                <p className="mt-4 border-t border-line pt-3 text-[11px] font-medium text-ink-3">
+                  {s.meta}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         {/* ── About ───────────────────────────────────────────────────── */}
         <section id="about" className="scroll-mt-24 pt-16 sm:pt-20">
           <div className="grid gap-10 rounded-[30px] border border-white/60 bg-canvas/92 p-6 shadow-[0_40px_100px_-80px_rgba(15,61,46,0.8)] backdrop-blur sm:p-10 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14">
@@ -234,11 +333,12 @@ export function Landing() {
                 ))}
               </div>
 
-              <dl className="mt-8 grid grid-cols-3 gap-4 border-t border-line pt-6">
+              <dl className="mt-8 grid grid-cols-2 gap-4 border-t border-line pt-6 sm:grid-cols-3">
                 {[
                   { k: "In practice", v: `${t.experienceYears} yrs` },
                   { k: "Session", v: `${t.sessionDuration} min` },
                   { k: "Format", v: "Online · In-person" },
+                  ...CREDENTIALS,
                 ].map((row) => (
                   <div key={row.k}>
                     <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-ink-3">
@@ -270,6 +370,64 @@ export function Landing() {
                   “She holds the hour properly.” — client, 14 months in care
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Specialties ─────────────────────────────────────────────── */}
+        <section id="specialties" className="scroll-mt-24 pt-16 sm:pt-20">
+          <div className="rounded-[30px] border border-white/60 bg-canvas/92 p-6 shadow-[0_40px_100px_-80px_rgba(15,61,46,0.8)] backdrop-blur sm:p-10">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#157a4d]">
+                  Specialties
+                </p>
+                <h2 className="display-serif mt-3 text-[clamp(1.9rem,3.6vw,2.7rem)] text-ink">
+                  What we work with.
+                </h2>
+              </div>
+              <p className="max-w-[38ch] text-[12.5px] leading-relaxed text-[#5f6d66]">
+                You don't need a diagnosis or the right vocabulary to start. Most people arrive with
+                a feeling and leave the first hour with words for it.
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-px overflow-hidden rounded-[22px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+              {CONCERNS.map((c) => (
+                <article key={c.title} className="bg-canvas p-5">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#eef4f0] text-[#157a4d]">
+                    <Icon name={c.icon} className="h-4 w-4" strokeWidth={1.8} />
+                  </span>
+                  <h3 className="mt-3.5 text-[13px] font-semibold leading-snug text-ink">
+                    {c.title}
+                  </h3>
+                  <p className="mt-2 text-[11.5px] leading-[1.65] text-[#5f6d66]">{c.body}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-8 grid gap-6 border-t border-line pt-7 lg:grid-cols-[0.8fr_1.2fr] lg:gap-10">
+              <div>
+                <h3 className="display-serif text-[clamp(1.35rem,2.4vw,1.75rem)] text-ink">
+                  Signs it might be time.
+                </h3>
+                <p className="mt-2 max-w-[34ch] text-[12px] leading-relaxed text-[#5f6d66]">
+                  None of these are symptoms on their own. Together they usually mean something is
+                  asking for attention.
+                </p>
+              </div>
+              <ul className="grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+                {SIGNS.map((s) => (
+                  <li key={s} className="flex items-start gap-2.5 text-[12px] leading-relaxed text-ink-2">
+                    <Icon
+                      name="check"
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#12a05e]"
+                      strokeWidth={2.2}
+                    />
+                    {s}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </section>
@@ -326,6 +484,88 @@ export function Landing() {
                     </a>
                   </div>
                 </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ── What's included ─────────────────────────────────────────── */}
+        <section className="pt-16 sm:pt-20">
+          <div className="grid gap-8 lg:grid-cols-[0.82fr_1.18fr] lg:gap-12">
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#157a4d]">
+                Inside the hour
+              </p>
+              <h2 className="display-serif mt-3 text-[clamp(1.9rem,3.6vw,2.6rem)] text-ink">
+                Not just a
+                <br />
+                listening ear.
+              </h2>
+              <p className="mt-4 max-w-[36ch] text-[12.5px] leading-relaxed text-[#5f6d66]">
+                Therapy here is structured clinical work: an assessment, a plan with goals you can
+                argue with, and a record that follows the work instead of restarting every week.
+              </p>
+            </div>
+
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {INCLUSIONS.map((item) => (
+                <li
+                  key={item.title}
+                  className="rounded-[20px] border border-white/70 bg-canvas p-4 shadow-[0_24px_60px_-56px_rgba(15,61,46,0.8)]"
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-[#eef4f0] text-[#157a4d]">
+                    <Icon name={item.icon} className="h-4 w-4" strokeWidth={1.8} />
+                  </span>
+                  <h3 className="mt-3 text-[12.5px] font-semibold leading-snug text-ink">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1.5 text-[11.5px] leading-[1.65] text-[#5f6d66]">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── Programmes ──────────────────────────────────────────────── */}
+        <section id="programmes" className="scroll-mt-24 pt-16 sm:pt-20">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#157a4d]">
+                Beyond the hour
+              </p>
+              <h2 className="display-serif mt-3 text-[clamp(1.9rem,3.6vw,2.7rem)] text-ink">
+                Care that fits the rest of life.
+              </h2>
+            </div>
+            <p className="max-w-[36ch] text-[12.5px] leading-relaxed text-[#5f6d66]">
+              Campuses, workplaces and couples each need a different container for the same clinical
+              work. These are the three the practice runs.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {PROGRAMMES.map((p) => (
+              <article
+                key={p.title}
+                className="flex h-full flex-col rounded-[24px] bg-[#0f3d2e] p-5 shadow-[0_36px_80px_-60px_rgba(15,61,46,0.9)]"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a9d3bb]">
+                  {p.meta}
+                </p>
+                <h3 className="mt-3 text-[15px] font-semibold text-white">{p.title}</h3>
+                <p className="mt-2 flex-1 text-[12px] leading-[1.7] text-[#c3d8cb]">{p.body}</p>
+                <ul className="mt-4 space-y-2 border-t border-white/15 pt-4">
+                  {p.points.map((point) => (
+                    <li key={point} className="flex items-start gap-2 text-[11.5px] leading-snug text-[#d6e6dc]">
+                      <Icon
+                        name="check"
+                        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#7fc4a0]"
+                        strokeWidth={2.2}
+                      />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
               </article>
             ))}
           </div>
@@ -565,6 +805,73 @@ export function Landing() {
           </div>
         </section>
 
+        {/* ── Fees, policies & safety ─────────────────────────────────── */}
+        <section id="policies" className="scroll-mt-24 pt-16 sm:pt-20">
+          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-[24px] border border-white/70 bg-canvas p-6 shadow-[0_30px_70px_-60px_rgba(15,61,46,0.8)] sm:p-7">
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#157a4d]">
+                Fees & policies
+              </p>
+              <h2 className="display-serif mt-3 text-[clamp(1.6rem,3vw,2.15rem)] text-ink">
+                The practical part, spelled out.
+              </h2>
+              <dl className="mt-6 divide-y divide-line border-t border-line">
+                {POLICIES.map((p) => (
+                  <div key={p.title} className="py-4">
+                    <dt className="text-[12.5px] font-semibold text-ink">{p.title}</dt>
+                    <dd className="mt-1 text-[12px] leading-[1.7] text-[#5f6d66]">{p.body}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div className="rounded-[24px] bg-[#0f3d2e] p-6 shadow-[0_40px_90px_-70px_rgba(15,61,46,0.9)] sm:p-7">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#cfe7d8]">
+                <Icon name="lock" className="h-3 w-3" strokeWidth={2} />
+                Confidentiality & safety
+              </span>
+              <h2 className="display-serif mt-4 text-[clamp(1.5rem,2.6vw,1.95rem)] text-white">
+                What stays in the room.
+              </h2>
+              <ul className="mt-4 space-y-2.5">
+                {CONFIDENTIALITY.map((line) => (
+                  <li key={line} className="flex items-start gap-2.5 text-[11.5px] leading-[1.7] text-[#d6e6dc]">
+                    <Icon
+                      name="check"
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#7fc4a0]"
+                      strokeWidth={2.2}
+                    />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-6 border-t border-white/15 pt-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#f0c9a8]">
+                  If this is an emergency
+                </p>
+                <p className="mt-2 text-[11.5px] leading-[1.7] text-[#c3d8cb]">
+                  Therapy is not emergency care. If you or someone else is in immediate danger,
+                  call one of these now.
+                </p>
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {CRISIS_LINES.map((line) => (
+                    <li key={line.name} className="rounded-xl bg-white/8 px-3 py-2.5">
+                      <a
+                        href={`tel:${line.tel}`}
+                        className="num text-[12.5px] font-semibold text-white hover:underline"
+                      >
+                        {line.name} · {line.number}
+                      </a>
+                      <p className="mt-0.5 text-[10.5px] leading-snug text-[#a9c4b5]">{line.note}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ── FAQ ─────────────────────────────────────────────────────── */}
         <section className="pt-16 sm:pt-20">
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
@@ -578,8 +885,25 @@ export function Landing() {
                 the first hour.
               </h2>
               <p className="mt-4 max-w-[32ch] text-[12.5px] leading-relaxed text-[#5f6d66]">
-                Still unsure? Write to the practice and you'll get a reply from a person, not a
-                form.
+                Still unsure? Message the practice on{" "}
+                <a
+                  href={whatsappChat}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-[#157a4d] hover:underline"
+                >
+                  WhatsApp
+                </a>{" "}
+                or{" "}
+                <a
+                  href={gmailSupport}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-[#157a4d] hover:underline"
+                >
+                  email from Gmail
+                </a>{" "}
+                and you'll get a reply from a person, not a form.
               </p>
             </div>
 
@@ -626,6 +950,29 @@ export function Landing() {
                   Book a first session, or sign in to the practice console if you're already running
                   your caseload on Unfazed.
                 </p>
+                <dl className="mt-6 flex flex-wrap gap-x-9 gap-y-4 border-t border-[#0f3d2e]/15 pt-5">
+                  {[
+                    { k: "Based in", v: "Mumbai · video across India" },
+                    { k: "Hours", v: "Mon–Sat · 9:00–18:00 IST" },
+                    { k: "Reply time", v: "Within one working day" },
+                    { k: "Crisis line", v: "Tele-MANAS 14416" },
+                  ].map((row) => (
+                    <div key={row.k}>
+                      <dt className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#5f7d6d]">
+                        {row.k}
+                      </dt>
+                      <dd className="mt-0.5 text-[11.5px] font-semibold text-[#0f3d2e]">
+                        {row.k === "Crisis line" ? (
+                          <a href="tel:14416" className="hover:underline">
+                            {row.v}
+                          </a>
+                        ) : (
+                          row.v
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
               <div className="flex flex-wrap gap-3">
                 <a
@@ -640,6 +987,24 @@ export function Landing() {
                   className="inline-flex h-12 items-center rounded-full border border-[#0f3d2e]/20 bg-white/70 px-6 text-[13px] font-semibold text-[#0f3d2e] transition-colors hover:bg-white"
                 >
                   Sign in
+                </a>
+                <a
+                  href={whatsappChat}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-12 items-center gap-2 rounded-full border border-[#128c4a]/30 bg-white/70 px-5 text-[13px] font-semibold text-[#128c4a] transition-colors hover:bg-white"
+                >
+                  <WhatsAppMark className="h-4 w-4" />
+                  WhatsApp
+                </a>
+                <a
+                  href={gmailSupport}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-12 items-center gap-2 rounded-full border border-[#0f3d2e]/20 bg-white/70 px-5 text-[13px] font-semibold text-[#0f3d2e] transition-colors hover:bg-white"
+                >
+                  <Icon name="mail" className="h-4 w-4" />
+                  Email support
                 </a>
               </div>
             </div>

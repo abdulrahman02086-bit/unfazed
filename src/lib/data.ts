@@ -20,15 +20,16 @@ export const templateSections = (t: string) => TEMPLATE_SECTIONS[t] ?? ["Session
 
 export function seedState(): AppState {
   return {
-    version: 1,
+    version: 4,
     platformFeePct: 5,
     therapist: {
-      name: "Dr. Ananya Sharma",
-      slug: "dr-sharma",
+      name: "Dr. Rahman",
+      slug: "dr-rahman",
       title: "Senior Clinical Psychologist · M.Phil (NIMHANS) · RCI Licensed",
       bio: "Nine years of clinical practice with young adults and working professionals. I work in CBT and ACT, with a trauma-informed lens, on anxiety, burnout, identity and relationship difficulty.",
-      photoUrl:
-        "https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=400&q=80",
+      photoUrl: "/therapist.webp",
+      whatsapp: "+91 98200 44556",
+      supportEmail: "hello@unfazed.in",
       languages: ["English", "Hindi", "Marathi"],
       specialisations: ["CBT", "ACT", "Trauma-informed care", "Burnout"],
       experienceYears: 9,
